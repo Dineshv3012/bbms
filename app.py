@@ -63,6 +63,14 @@ def create_app():
         """
         return redirect(url_for('auth.login'))
 
+    # Handle favicon.ico
+    @app.route('/favicon.ico')
+    def favicon():
+        """
+        Suppresses 404 log warnings for favicon.ico requests.
+        """
+        return '', 204
+
     # Create database tables
     with app.app_context():
         db.create_all()
