@@ -63,11 +63,12 @@ def create_app():
         """
         return redirect(url_for('auth.login'))
 
-    # Handle favicon.ico
+    # Handle common favicon paths
     @app.route('/favicon.ico')
+    @app.route('/favicon.png')
     def favicon():
         """
-        Suppresses 404 log warnings for favicon.ico requests.
+        Suppresses 404 log warnings for common favicon paths.
         """
         return '', 204
 
