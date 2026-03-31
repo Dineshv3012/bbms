@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}Smart Demand Analytics{% endblock %}
+{% block head %}
+<style>
+    /* Custom Glow Effects to resolve linter conflicts with arbitrary Tailwind values */
+    .glow-red { filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.4)); }
+    .glow-yellow { filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.4)); }
+    .glow-emerald { filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.4)); }
+    .glow-blue { filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.4)); }
+    .glow-purple { filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.4)); }
+    
+    .risk-bar {
+        transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="space-y-8 animate-fade-in">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                🧠 Smart Demand Prediction
+            </h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">
+                AI-powered forecasting based on historical blood requests.
+            </p>
+        </div>
+        
+        <div class="flex gap-3">
+            <div class="px-4 py-2 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span class="text-sm font-bold text-red-700 dark:text-red-400">{{ critical_count }} Critical Risks</span>
+            </div>
+            <div class="px-4 py-2 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-800 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span>
+                <span class="text-sm font-bold text-yellow-700 dark:text-yellow-400">{{ warning_count }} Warning Risks</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prediction Chart -->
+    <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white">7-Day Demand Forecast</h3>
+            <div class="flex gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span> History (12 Weeks)</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> Prediction</span>
+            </div>
+        </div>
+        <div class="h-80 w-full">
+            <canvas id="predictionChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Shortage Risk Analysis -->
+    <div class="flex items-center justify-between">
+        <h3 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">🔍 Shortage Risk Analysis</h3>
+        <p class="text-sm text-gray-500 hidden sm:block">Real-time depletion forecast</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {% for risk in shortage_alerts %}
+        {% set group_color = 'red' if 'A' in risk.blood_group and 'B' not in risk.blood_group else 'blue' if 'B' in risk.blood_group and 'A' not in risk.blood_group else 'purple' if 'AB' in risk.blood_group else 'emerald' %}
+        {% set progress_w = [0, 100 - (risk.days_until_shortage * 5)]|max %}
+        {% set group_bg = 'bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-sm overflow-hidden group hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5 relative' %}
+        {% set hover_shadow = 'hover:shadow-' ~ group_color ~ '-500/20 dark:hover:shadow-' ~ group_color ~ '-500/10' %}
+        <div class="{{ group_bg }} {{ hover_shadow }}">
+            
+            <!-- Structural Accents -->
+            {% set accent_bg = 'bg-' ~ group_color ~ '-500' %}
+            <div class="absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity duration-500 {{ accent_bg }}"></div>
+            <div class="absolute top-0 left-0 w-2 h-full {{ accent_bg }}/30 group-hover:{{ accent_bg }} transition-all duration-500"></div>
+
+            <div class="p-6 ml-1">
+                <!-- Top Row: Blood Group & Status -->
+                <div class="flex items-start justify-between mb-8">
+                    {% set group_gradient = 'bg-gradient-to-br from-' ~ group_color ~ '-600 to-' ~ group_color ~ '-400' %}
+                    <div class="relative">
+                        <span class="block text-6xl font-black {{ group_gradient }} bg-clip-text text-transparent leading-none tracking-tighter">{{ risk.blood_group }}</span>
+                        <div class="flex items-center gap-1.5 mt-2">
+                             <div class="px-2 py-0.5 rounded-md {% if risk.risk_level == 'critical' %}bg-red-500 text-white{% elif risk.risk_level == 'warning' %}bg-yellow-400 text-yellow-900{% else %}bg-emerald-500 text-white{% endif %} text-[9px] font-black uppercase tracking-widest shadow-sm">
+                                {{ risk.risk_level }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 rounded-2xl {% if risk.risk_level == 'critical' %}bg-red-500/10 text-red-500 border-red-500/20{% elif risk.risk_level == 'warning' %}bg-yellow-500/10 text-yellow-500 border-yellow-500/20{% else %}bg-emerald-500/10 text-emerald-500 border-emerald-500/20{% endif %} border backdrop-blur-sm">
+                        {% if risk.risk_level == 'critical' %}
+                        <svg class="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                        {% elif risk.risk_level == 'warning' %}
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        {% else %}
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Stock Dashboard (High Fidelity Boxes) -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="p-3 bg-{{ group_color }}-500/5 dark:bg-{{ group_color }}-400/5 rounded-2xl border border-{{ group_color }}-500/10 backdrop-blur-md group-hover:bg-{{ group_color }}-500/10 transition-colors">
+                        <span class="block text-[9px] font-bold text-{{ group_color }}-400 dark:text-{{ group_color }}-500 uppercase tracking-wider mb-1">Stock Portfolio</span>
+                        <div class="flex items-baseline gap-0.5">
+                            <span class="text-2xl font-black text-{{ group_color }}-700 dark:text-{{ group_color }}-300">{{ risk.current_stock }}</span>
+                            <span class="text-[10px] font-bold text-{{ group_color }}-400 uppercase">u</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-gray-50 dark:bg-gray-800/80 rounded-2xl border border-gray-100 dark:border-gray-800 group-hover:border-gray-200 dark:group-hover:border-gray-700 transition-colors">
+                        <span class="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Forecasted Need</span>
+                        <div class="flex items-baseline gap-0.5">
+                            <span class="text-2xl font-black text-gray-900 dark:text-white">{{ risk.predicted_demand }}</span>
+                            <span class="text-[10px] font-bold text-gray-400 uppercase">u</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shortage Progress -->
+                <div class="space-y-2 mb-6">
+                    <div class="flex justify-between items-center px-1">
+                        <span class="text-[10px] font-bold text-gray-400/80 uppercase tracking-widest">Depletion Status</span>
+                        <span class="text-sm font-black {% if risk.days_until_shortage <= 3 %}text-red-500{% else %}text-gray-950 dark:text-white{% endif %}">
+                            {{ risk.days_until_shortage|round if risk.days_until_shortage < 99 else '>90' }} <span class="text-[10px] uppercase font-bold opacity-40 ml-0.5">Days Left</span>
+                        </span>
+                    </div>
+                    <div class="h-1.5 w-full bg-gray-100 dark:bg-gray-800/50 rounded-full overflow-hidden">
+                        {% if risk.risk_level == 'critical' %}
+                            {% set bar_theme = 'bg-red-500 glow-red' %}
+                        {% elif risk.risk_level == 'warning' %}
+                            {% set bar_theme = 'bg-yellow-400 glow-yellow' %}
+                        {% else %}
+                            {% set bar_theme = 'bg-' ~ group_color ~ '-500 glow-' ~ group_color %}
+                        {% endif %}
+                        <div class="h-full {{ bar_theme }} risk-bar" data-width="{{ progress_w }}"></div>
+                    </div>
+                </div>
+                
+                <!-- AI Insight Footer -->
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-gray-400">MODEL.CONF</span>
+                        <div class="flex gap-0.5">
+                            {% for i in range(5) %}
+                            <div class="w-1.5 h-1.5 rounded-full {% if (risk.confidence * 5)|int > i %}bg-{{ group_color }}-500{% else %}bg-gray-200 dark:bg-gray-800{% endif %}"></div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter
+                        {% if risk.trend == 'rising' %}bg-red-50 text-red-600 dark:bg-red-900/20
+                        {% elif risk.trend == 'falling' %}bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20
+                        {% else %}bg-blue-50 text-blue-600 dark:bg-blue-900/20{% endif %} transition-all duration-300">
+                        <span>{% if risk.trend == 'rising' %}📈{% elif risk.trend == 'falling' %}📉{% else %}↔️{% endif %}</span>
+                        {{ risk.trend }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Info Banner -->
+    <div class="p-6 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-xl shadow-blue-500/20">
+        <div class="flex flex-col md:flex-row gap-6 items-center">
+            <div class="p-4 rounded-2xl bg-white/10 backdrop-blur-sm">
+                <svg class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <div class="flex-1 text-center md:text-left">
+                <h4 class="text-xl font-bold mb-1">How it works</h4>
+                <p class="text-blue-100 text-sm leading-relaxed">
+                    Our prediction engine uses linear regression analysis to identify patterns in 12 weeks of historical request data. It weighs recent trends more heavily and assesses stock depletion rates to predict exactly when a blood group might run low before it actually happens.
+                </p>
+            </div>
+            <button onclick="window.location.reload()" class="px-6 py-3 bg-white text-blue-700 font-bold rounded-2xl hover:bg-blue-50 transition-colors shadow-lg">Refresh Analytics</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#e5e7eb' : '#374151';
+    const gridColor = isDark ? '#1f2937' : '#f3f4f6';
+    
+    // Prediction Trends Line Chart
+    const ctx = document.getElementById('predictionChart').getContext('2d');
+    const trendsData = JSON.parse(`{{ trends|tojson|safe }}`);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: trendsData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: textColor, padding: 20, usePointStyle: true, font: { size: 10, weight: 'bold' } }
+                },
+                tooltip: {
+                    backgroundColor: isDark ? '#1f2937' : '#ffffff',
+                    titleColor: isDark ? '#f9fafb' : '#111827',
+                    bodyColor: isDark ? '#9ca3af' : '#4b5563',
+                    borderColor: isDark ? '#374151' : '#e5e7eb',
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 12,
+                    usePointStyle: true
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: gridColor, drawBorder: false },
+                    ticks: { color: textColor, padding: 10 }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: textColor, padding: 10 }
+                }
+            }
+        }
+    });
+
+    // Apply Dynamic Bar Widths from Data Attributes
+    document.querySelectorAll('.risk-bar').forEach(bar => {
+        const width = bar.getAttribute('data-width');
+        if (width) {
+            // Slight delay for animation entry
+            setTimeout(() => {
+                bar.style.width = width + '%';
+            }, 100);
+        }
+    });
+});
+</script>
+{% endblock %}

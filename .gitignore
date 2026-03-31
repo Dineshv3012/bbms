@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Databases
+*.db
+*.sqlite3
+
+# Logs
+*.log
+pylint_report.txt
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Virtual Environment
+venv/
+env/
+.venv/
+
+# Secret files
+.env
+secret.key
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Local artifacts
+testwrite.txt
+test_connection.py
+direct_test.py
+init_db.py
+bbms.db
+
+# IDEs
+.vscode/
+.idea/

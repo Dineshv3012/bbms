@@ -1,0 +1,12 @@
+{
+  "name": "bbms",
+  "version": "1.0.0",
+  "description": "Blood Bank Management System - Tailwind CSS Build",
+  "scripts": {
+    "dev": "npx tailwindcss -i ./static/src/input.css -o ./static/dist/output.css --watch",
+    "build": "npx tailwindcss -i ./static/src/input.css -o ./static/dist/output.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}

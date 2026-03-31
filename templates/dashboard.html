@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6 lg:space-y-8">
+    <!-- Header -->
+    <div class="animate-fade-in">
+        <h1 class="text-2xl lg:text-3xl font-extrabold text-gray-900 dark:text-white">Dashboard</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Overview of your blood bank operations</p>
+    </div>
+
+    <!-- Prediction Alerts Banner -->
+    {% if prediction_alerts %}
+    <div class="animate-fade-in p-4 rounded-2xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 flex items-center justify-between gap-4 group">
+        <div class="flex items-center gap-4">
+            <div class="p-2 rounded-xl bg-red-500 text-white animate-pulse">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div>
+                <h4 class="text-sm font-bold text-red-900 dark:text-red-400">Critical Shortage Risks Detected</h4>
+                <p class="text-xs text-red-700 dark:text-red-500 mt-0.5">
+                    AI predicts {{ prediction_alerts|length }} blood group(s) may experience shortages soon based on trend analysis.
+                </p>
+            </div>
+        </div>
+        <a href="{{ url_for('analytics.index') }}" class="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-xl hover:bg-red-700 transition shadow-lg shadow-red-500/20">Analyze Forecast</a>
+    </div>
+    {% endif %}
+
+    <!-- Metrics Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 lg:gap-6">
+        <!-- Total Blood Units -->
+        <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 group stagger-1">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl bg-blood-50 dark:bg-blood-900/20 text-blood-600 dark:text-blood-400 group-hover:scale-110 transition-transform duration-300">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                </div>
+            </div>
+            <p class="text-3xl font-extrabold text-gray-900 dark:text-white animate-count-up">{{ total_units }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Total Blood Units</p>
+        </div>
+
+        <!-- Total Donors -->
+        <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 group stagger-2">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-300">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                </div>
+            </div>
+            <p class="text-3xl font-extrabold text-gray-900 dark:text-white animate-count-up">{{ total_donors }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Total Donors</p>
+        </div>
+
+        <!-- Total Requests -->
+        <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 group stagger-3">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform duration-300">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                </div>
+            </div>
+            <p class="text-3xl font-extrabold text-gray-900 dark:text-white animate-count-up">{{ total_requests }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Total Requests</p>
+        </div>
+
+        <!-- Low Stock Alerts -->
+        <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 group {% if low_stock > 0 %}animate-pulse-glow border-blood-300 dark:border-blood-700{% endif %} stagger-4">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400 group-hover:scale-110 transition-transform duration-300">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                </div>
+            </div>
+            <p class="text-3xl font-extrabold {% if low_stock > 0 %}text-blood-600 dark:text-blood-400{% else %}text-gray-900 dark:text-white{% endif %} animate-count-up">{{ low_stock }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Low Stock Alerts</p>
+        </div>
+
+        <!-- Eligible Donors -->
+        <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-lg transition-all duration-300 group stagger-5">
+            <div class="flex items-center justify-between mb-4">
+                <div class="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform duration-300">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+            </div>
+            <p class="text-3xl font-extrabold text-gray-900 dark:text-white animate-count-up">{{ eligible_donors }}</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Eligible Donors</p>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <!-- Blood Group Distribution -->
+        <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm stagger-5">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Blood Group Distribution</h3>
+            <div class="relative h-64">
+                <canvas id="bgChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Monthly Donations -->
+        <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl p-6 border border-gray-200 dark:border-gray-800 shadow-sm stagger-6">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Monthly Registrations</h3>
+            <div class="relative h-64">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
+        <!-- Recent Donors -->
+        <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden stagger-7">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Recent Donors</h3>
+                <a href="{{ url_for('donors.index') }}" class="text-sm text-blood-600 dark:text-blood-400 hover:underline font-medium">View All →</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 dark:bg-gray-800/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Group</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden lg:table-cell">Address</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                        {% for donor in recent_donors %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <td class="px-6 py-3 font-medium text-gray-900 dark:text-white">{{ donor.name }}</td>
+                            <td class="px-6 py-3"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blood-100 dark:bg-blood-900/30 text-blood-700 dark:text-blood-400">{{ donor.blood_group }}</span></td>
+                            <td class="px-6 py-3 text-gray-500 dark:text-gray-400">{{ donor.contact }}</td>
+                            <td class="px-6 py-3 text-gray-500 dark:text-gray-400 hidden lg:table-cell"><span class="truncate max-w-[180px] inline-block" title="{{ donor.address or '' }}">{{ donor.address or '—' }}</span></td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="px-6 py-8 text-center text-gray-400">No donors yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pending Requests -->
+        <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden stagger-8">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Pending Requests</h3>
+                <a href="{{ url_for('requests.index') }}" class="text-sm text-blood-600 dark:text-blood-400 hover:underline font-medium">View All →</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-50 dark:bg-gray-800/50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Patient</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Group</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Units</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
+                        {% for req in pending_requests %}
+                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <td class="px-6 py-3 font-medium text-gray-900 dark:text-white">{{ req.patient_name }}</td>
+                            <td class="px-6 py-3"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blood-100 dark:bg-blood-900/30 text-blood-700 dark:text-blood-400">{{ req.blood_group }}</span></td>
+                            <td class="px-6 py-3 text-gray-600 dark:text-gray-300">{{ req.units_required }}</td>
+                            <td class="px-6 py-3">
+                                <div class="flex gap-1">
+                                    <form method="POST" action="{{ url_for('requests.approve', req_id=req.id) }}" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="p-1.5 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors" title="Approve">✓</button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('requests.reject', req_id=req.id) }}" class="inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="p-1.5 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors" title="Reject">✕</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" class="px-6 py-8 text-center text-gray-400">No pending requests</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const textColor = isDark ? '#e5e7eb' : '#374151';
+    const gridColor = isDark ? '#1f2937' : '#f3f4f6';
+
+    // Blood Group Distribution Bar Chart
+    const bgCtx = document.getElementById('bgChart').getContext('2d');
+    new Chart(bgCtx, {
+        type: 'bar',
+        data: {
+            labels: JSON.parse('{{ bg_labels|tojson|safe }}'),
+            datasets: [{
+                label: 'Units Available',
+                data: JSON.parse('{{ bg_values|tojson|safe }}'),
+                backgroundColor: [
+                    'rgba(220,38,38,0.8)', 'rgba(220,38,38,0.5)',
+                    'rgba(59,130,246,0.8)', 'rgba(59,130,246,0.5)',
+                    'rgba(168,85,247,0.8)', 'rgba(168,85,247,0.5)',
+                    'rgba(34,197,94,0.8)', 'rgba(34,197,94,0.5)',
+                ],
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor } },
+                x: { ticks: { color: textColor }, grid: { display: false } }
+            }
+        }
+    });
+
+    // Monthly Donations Line Chart
+    const monthCtx = document.getElementById('monthlyChart').getContext('2d');
+    new Chart(monthCtx, {
+        type: 'line',
+        data: {
+            labels: JSON.parse('{{ monthly_labels|tojson|safe }}'),
+            datasets: [{
+                label: 'New Donors',
+                data: JSON.parse('{{ monthly_values|tojson|safe }}'),
+                borderColor: 'rgba(220,38,38,0.8)',
+                backgroundColor: 'rgba(220,38,38,0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#dc2626',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                y: { beginAtZero: true, ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } },
+                x: { ticks: { color: textColor }, grid: { display: false } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
