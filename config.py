@@ -9,6 +9,9 @@ class Config:
     # Use DATABASE_URL if set (MySQL/TiDB in production).
     # Fall back to SQLite in /tmp — the only writable path on Vercel serverless.
     _db_url = os.environ.get('DATABASE_URL')
+    # Fix common mistake: mysql:// must be mysql+pymysql:// for PyMySQL driver
+    if _db_url and _db_url.startswith('mysql://'):
+        _db_url = _db_url.replace('mysql://', 'mysql+pymysql://', 1)
     if _db_url:
         SQLALCHEMY_DATABASE_URI = _db_url
     else:

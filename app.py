@@ -28,7 +28,7 @@ def create_app():
     """
     Creates and configures the Flask application.
     """
-    app = Flask(__name__)
+    app = Flask(__name__, instance_path='/tmp')
     app.config.from_object(Config)
 
     # Initialize extensions
