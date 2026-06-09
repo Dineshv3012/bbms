@@ -15,6 +15,25 @@
         </button>
     </div>
 
+    <!-- Export + Bulk Actions bar -->
+    <div class="animate-fade-in flex flex-wrap gap-2 stagger-0">
+        <a href="/export/donors{% if selected_group %}?blood_group={{ selected_group }}{% endif %}"
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-lg transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export Donors CSV
+        </a>
+        <a href="/export/eligible-donors"
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Export Eligible Donors
+        </a>
+        <button id="bulkDeleteBtn" onclick="bulkDeleteDonors()" style="display:none"
+           class="inline-flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            Delete Selected (<span id="selectedCount">0</span>)
+        </button>
+    </div>
+
     <!-- Search & Filter -->
     <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4 stagger-1">
         <form method="GET" class="flex flex-col sm:flex-row gap-3">
@@ -40,6 +59,7 @@
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 dark:bg-gray-800/50">
                     <tr>
+                        <th class="px-4 py-3.5 w-8"><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" class="rounded border-gray-300 text-blood-600 focus:ring-blood-500"></th>
                         <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
                         <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Blood Group</th>
                         <th class="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
@@ -52,7 +72,8 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                     {% for donor in donors.items %}
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors donor-row" data-id="{{ donor.id }}">
+                        <td class="px-4 py-4"><input type="checkbox" class="donor-checkbox rounded border-gray-300 text-blood-600 focus:ring-blood-500" value="{{ donor.id }}" onchange="updateBulkBar()"></td>
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
                                 <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blood-400 to-blood-600 flex items-center justify-center text-white text-sm font-bold">{{ donor.name[0]|upper }}</div>
@@ -279,6 +300,42 @@ function confirmDelete(btn) {
     document.getElementById('deleteName').textContent = btn.dataset.name;
     document.getElementById('deleteForm').action = '/donors/' + btn.dataset.id + '/delete';
     openModal('deleteModal');
+}
+
+// ---- Bulk Select ----
+function toggleSelectAll(master) {
+    document.querySelectorAll('.donor-checkbox').forEach(cb => { cb.checked = master.checked; });
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    const checked = document.querySelectorAll('.donor-checkbox:checked');
+    const btn = document.getElementById('bulkDeleteBtn');
+    const countEl = document.getElementById('selectedCount');
+    if (checked.length > 0) {
+        btn.style.display = 'inline-flex';
+        countEl.textContent = checked.length;
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+async function bulkDeleteDonors() {
+    const ids = [...document.querySelectorAll('.donor-checkbox:checked')].map(cb => cb.value);
+    if (!ids.length) return;
+    if (!confirm(`Delete ${ids.length} donor(s)? This cannot be undone.`)) return;
+    const csrf = document.querySelector('meta[name="csrf-token"]').content;
+    const res = await fetch('/donors/bulk-delete', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': csrf},
+        body: JSON.stringify({ids})
+    });
+    const data = await res.json();
+    if (data.deleted !== undefined) {
+        location.reload();
+    } else {
+        alert('Error: ' + (data.error || 'Unknown error'));
+    }
 }
 </script>
 {% endblock %}

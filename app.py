@@ -2,6 +2,8 @@
 This module initializes the Flask application and registers all the blueprints.
 """
 import os
+from dotenv import load_dotenv
+load_dotenv()  # Load .env if present
 from flask import Flask, redirect, url_for
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
@@ -16,6 +18,7 @@ from routes.staff import staff_bp
 from routes.logs import logs_bp
 from routes.analytics import analytics_bp
 from routes.locator import locator_bp
+from routes.export import export_bp
 
 login_manager = LoginManager()
 csrf = CSRFProtect()
@@ -54,6 +57,7 @@ def create_app():
     app.register_blueprint(logs_bp)
     app.register_blueprint(analytics_bp)
     app.register_blueprint(locator_bp)
+    app.register_blueprint(export_bp)
 
     # Root redirect
     @app.route('/')

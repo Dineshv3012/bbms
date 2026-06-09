@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
-from flask_login import login_required
+from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from models import db, Donor, BLOOD_GROUPS
 from utils.audit import log_action
@@ -124,3 +124,121 @@ def delete(donor_id):
     log_action('DELETE_DONOR', f'Deleted donor: {name}')
     flash(f'Donor {name} deleted.', 'success')
     return redirect(url_for('donors.index'))
+
+
+@donors_bp.route('/donors/bulk-delete', methods=['POST'])
+@login_required
+def bulk_delete():
+    """Bulk delete donors by ID list."""
+    ids = request.json.get('ids', []) if request.is_json else request.form.getlist('ids')
+    if not ids:
+        if request.is_json:
+            return jsonify({'error': 'No IDs provided'}), 400
+        flash('No donors selected.', 'error')
+        return redirect(url_for('donors.index'))
+
+    deleted = Donor.query.filter(Donor.id.in_(ids)).all()
+    count = len(deleted)
+    for d in deleted:
+        db.session.delete(d)
+    db.session.commit()
+    log_action('BULK_DELETE_DONORS', f'Bulk deleted {count} donors: IDs {ids}')
+
+    if request.is_json:
+        return jsonify({'deleted': count})
+    flash(f'Deleted {count} donor(s).', 'success')
+    return redirect(url_for('donors.index'))
+
+
+@donors_bp.route('/donors/<int:donor_id>/profile')
+@login_required
+def profile(donor_id):
+    """Return donor profile as JSON for modal display."""
+    from datetime import datetime, timezone, timedelta
+    donor = Donor.query.get_or_404(donor_id)
+    today = datetime.now(timezone.utc).date()
+    eligibility_cutoff = (datetime.now(timezone.utc) - timedelta(days=56)).date()
+
+    if donor.last_donation_date:
+        days_since = (today - donor.last_donation_date).days
+        eligible = days_since >= 56
+    else:
+        days_since = None
+        eligible = True
+
+    return jsonify({
+        'id': donor.id,
+        'name': donor.name,
+        'blood_group': donor.blood_group,
+        'contact': donor.contact,
+        'email': donor.email,
+        'address': donor.address,
+        'last_donation_date': donor.last_donation_date.isoformat() if donor.last_donation_date else None,
+        'days_since_donation': days_since,
+        'eligible_to_donate': eligible,
+        'id_proof_path': donor.id_proof_path,
+        'created_at': donor.created_at.isoformat() if donor.created_at else None
+    })
+
+
+@donors_bp.route('/donors/stats')
+@login_required
+def stats():
+    """Return donor statistics as JSON for dashboard widgets."""
+    from datetime import datetime, timezone, timedelta
+    from sqlalchemy import func
+    from models import BloodInventory
+
+    by_group = db.session.query(Donor.blood_group, func.count(Donor.id)).group_by(Donor.blood_group).all()
+    eligibility_cutoff = (datetime.now(timezone.utc) - timedelta(days=56)).date()
+    eligible_count = Donor.query.filter(
+        (Donor.last_donation_date == None) | (Donor.last_donation_date <= eligibility_cutoff)
+    ).count()
+
+    return jsonify({
+        'total': Donor.query.count(),
+        'by_group': {bg: cnt for bg, cnt in by_group},
+        'eligible': eligible_count,
+    })
+
+
+# ---- Donor Notes ----
+@donors_bp.route('/donors/<int:donor_id>/notes', methods=['GET'])
+@login_required
+def get_notes(donor_id):
+    from models import DonorNote
+    Donor.query.get_or_404(donor_id)
+    notes = DonorNote.query.filter_by(donor_id=donor_id).order_by(DonorNote.created_at.desc()).all()
+    return jsonify([{
+        'id': n.id,
+        'note': n.note,
+        'author': n.author.username if n.author else 'Unknown',
+        'created_at': n.created_at.strftime('%Y-%m-%d %H:%M') if n.created_at else ''
+    } for n in notes])
+
+
+@donors_bp.route('/donors/<int:donor_id>/notes', methods=['POST'])
+@login_required
+def add_note(donor_id):
+    from models import DonorNote
+    Donor.query.get_or_404(donor_id)
+    note_text = (request.json or {}).get('note', '').strip() if request.is_json else request.form.get('note', '').strip()
+    if not note_text:
+        return jsonify({'error': 'Note cannot be empty'}), 400
+    note = DonorNote(donor_id=donor_id, note=note_text, created_by=current_user.id)
+    db.session.add(note)
+    db.session.commit()
+    log_action('ADD_DONOR_NOTE', f'Added note to donor #{donor_id}')
+    return jsonify({'id': note.id, 'note': note.note, 'author': current_user.username})
+
+
+@donors_bp.route('/donors/notes/<int:note_id>', methods=['DELETE'])
+@login_required
+def delete_note(note_id):
+    from models import DonorNote
+    note = DonorNote.query.get_or_404(note_id)
+    if note.created_by != current_user.id and not current_user.is_admin:
+        return jsonify({'error': 'Permission denied'}), 403
+    db.session.delete(note)
+    db.session.commit()
+    return jsonify({'deleted': True})

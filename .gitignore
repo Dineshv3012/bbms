@@ -38,3 +38,7 @@ bbms.db
 # IDEs
 .vscode/
 .idea/
+
+# User uploads
+static/uploads/*
+!static/uploads/.gitkeep

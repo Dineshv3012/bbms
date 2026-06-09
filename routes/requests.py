@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
+from sqlalchemy import func
 from models import db, BloodRequest, BloodInventory, BLOOD_GROUPS
 from utils.audit import log_action
 
@@ -89,3 +90,34 @@ def reject(req_id):
                f'Rejected request #{br.id} for {br.patient_name}')
     flash(f'Request for {br.patient_name} rejected.', 'success')
     return redirect(url_for('requests.index'))
+
+
+@requests_bp.route('/requests/<int:req_id>/cancel', methods=['POST'])
+@login_required
+def cancel(req_id):
+    br = BloodRequest.query.get_or_404(req_id)
+    if br.status != 'pending':
+        flash('Only pending requests can be cancelled.', 'error')
+        return redirect(url_for('requests.index'))
+    br.status = 'cancelled'
+    db.session.commit()
+    log_action('CANCEL_REQUEST', f'Cancelled request #{br.id} for {br.patient_name}')
+    flash(f'Request for {br.patient_name} cancelled.', 'success')
+    return redirect(url_for('requests.index'))
+
+
+@requests_bp.route('/requests/stats')
+@login_required
+def stats():
+    """Return request statistics as JSON."""
+    from sqlalchemy import func
+    total = BloodRequest.query.count()
+    by_status = db.session.query(BloodRequest.status, func.count(BloodRequest.id)).group_by(BloodRequest.status).all()
+    by_urgency = db.session.query(BloodRequest.urgency, func.count(BloodRequest.id)).group_by(BloodRequest.urgency).all()
+    total_units = db.session.query(func.sum(BloodRequest.units_required)).scalar() or 0
+    return jsonify({
+        'total': total,
+        'by_status': {s: c for s, c in by_status},
+        'by_urgency': {u: c for u, c in by_urgency},
+        'total_units_requested': total_units
+    })

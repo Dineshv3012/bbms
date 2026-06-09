@@ -109,3 +109,24 @@ def notifications():
     """
     alerts = get_all_alerts()
     return jsonify({'count': len(alerts), 'items': alerts})
+
+
+@dashboard_bp.route('/api/dashboard/summary')
+@login_required
+def summary_api():
+    """Full dashboard summary as JSON for frontend widgets/refresh."""
+    from utils.alerts import get_all_alerts
+    total_units = db.session.query(func.sum(BloodInventory.units_available)).scalar() or 0
+    total_donors = Donor.query.count()
+    total_requests = BloodRequest.query.count()
+    pending = BloodRequest.query.filter_by(status='pending').count()
+    critical_stock = BloodInventory.query.filter(BloodInventory.units_available <= 2).count()
+    alerts = get_all_alerts()
+    return jsonify({
+        'total_units': total_units,
+        'total_donors': total_donors,
+        'total_requests': total_requests,
+        'pending_requests': pending,
+        'critical_stock_groups': critical_stock,
+        'alert_count': len(alerts)
+    })

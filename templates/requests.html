@@ -12,6 +12,11 @@
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             New Request
         </button>
+        <a href="/export/requests{% if status_filter %}?status={{ status_filter }}{% endif %}"
+           class="inline-flex items-center gap-1.5 px-3 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl transition-colors">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Export CSV
+        </a>
     </div>
 
     <div class="animate-fade-in bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-4">
@@ -20,6 +25,7 @@
             <a href="?status=pending" class="px-4 py-2 rounded-xl text-sm font-medium {% if status_filter == 'pending' %}bg-yellow-500 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700{% endif %} transition-colors">Pending</a>
             <a href="?status=approved" class="px-4 py-2 rounded-xl text-sm font-medium {% if status_filter == 'approved' %}bg-green-600 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700{% endif %} transition-colors">Approved</a>
             <a href="?status=rejected" class="px-4 py-2 rounded-xl text-sm font-medium {% if status_filter == 'rejected' %}bg-red-600 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700{% endif %} transition-colors">Rejected</a>
+            <a href="?status=cancelled" class="px-4 py-2 rounded-xl text-sm font-medium {% if status_filter == 'cancelled' %}bg-gray-600 text-white{% else %}bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700{% endif %} transition-colors">Cancelled</a>
         </div>
     </div>
 
@@ -51,6 +57,7 @@
                             <div class="flex items-center justify-end gap-1">
                                 <form method="POST" action="{{ url_for('requests.approve', req_id=req.id) }}" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors text-sm font-medium">✓</button></form>
                                 <form method="POST" action="{{ url_for('requests.reject', req_id=req.id) }}" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-sm font-medium">✕</button></form>
+                                <form method="POST" action="{{ url_for('requests.cancel', req_id=req.id) }}" class="inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" title="Cancel Request" class="p-2 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-sm font-medium">⊘</button></form>
                             </div>
                             {% else %}<span class="text-gray-400">—</span>{% endif %}
                         </td>

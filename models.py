@@ -166,3 +166,35 @@ class AuditLog(db.Model):
 
     def __repr__(self):
         return f'<AuditLog {self.action} by User {self.user_id}>'
+
+
+class InventoryHistory(db.Model):
+    """Tracks every change to blood inventory for trending and audit."""
+    __tablename__ = 'inventory_history'
+
+    id = db.Column(db.Integer, primary_key=True)
+    blood_group = db.Column(db.String(5), nullable=False)
+    units_before = db.Column(db.Integer, nullable=False)
+    units_after = db.Column(db.Integer, nullable=False)
+    action = db.Column(db.String(20), nullable=False)  # set / add / subtract
+    changed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    changer = db.relationship('User', backref='inventory_changes')
+
+    def __repr__(self):
+        return f'<InventoryHistory {self.blood_group}: {self.units_before}→{self.units_after}>'
+
+
+class DonorNote(db.Model):
+    """Free-text notes attached to a donor (e.g. health flags, contact notes)."""
+    __tablename__ = 'donor_notes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    donor_id = db.Column(db.Integer, db.ForeignKey('donors.id'), nullable=False)
+    note = db.Column(db.Text, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    donor = db.relationship('Donor', backref='notes')
+    author = db.relationship('User', backref='donor_notes')
