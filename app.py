@@ -81,7 +81,10 @@ def create_app():
         db.create_all()
     
     # Create uploads folder
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    try:
+        os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    except OSError:
+        pass  # Read-only filesystem on Vercel
 
     return app
 

@@ -12,20 +12,23 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = os.environ.get('SQLALCHEMY_ECHO', 'false').lower() == 'true'
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_recycle": 60,
-        "pool_pre_ping": True,
-    }
 
-    # Only add SSL connect_args when DATABASE_URL points to TiDB/MySQL (not SQLite)
     _db_url = SQLALCHEMY_DATABASE_URI
+
+    # Pool options only apply to MySQL/TiDB — SQLite doesn't support them
     if _db_url and 'mysql' in _db_url:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            "pool_recycle": 60,
+            "pool_pre_ping": True,
+        }
         _ssl_ca = os.path.join(BASE_DIR, 'isrgrootx1.pem')
         if os.path.exists(_ssl_ca):
             SQLALCHEMY_ENGINE_OPTIONS['connect_args'] = {
                 'ssl': {'ca': _ssl_ca},
                 'connect_timeout': 10
             }
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {}
 
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB upload limit
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'static', 'uploads')
